@@ -19,7 +19,7 @@ namespace Minesweeper
             Int32.TryParse(lstr, out board_dims[0]);
             Int32.TryParse(wstr, out board_dims[1]);
 
-            Board my_board = new Board(board_dims[0], board_dims[1]);
+            Board my_board = new Board(board_dims[0], board_dims[1], 10);
             my_board.print_board();
 
             Console.ReadKey();
