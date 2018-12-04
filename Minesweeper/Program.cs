@@ -20,7 +20,18 @@ namespace Minesweeper
             Int32.TryParse(wstr, out board_dims[1]);
 
             Board my_board = new Board(board_dims[0], board_dims[1], 10);
-            my_board.print_board();
+
+            Point to_sweep = new Point(0, 0);
+            do
+            {
+                my_board.print_board();
+                Console.Write("X: ");
+                string x_pt = Console.ReadLine();
+                Console.Write("Y: ");
+                string y_pt = Console.ReadLine();
+                Int32.TryParse(x_pt, out to_sweep.x);
+                Int32.TryParse(y_pt, out to_sweep.y);
+            } while (my_board.sweep(to_sweep) != -1);
 
             Console.ReadKey();
         }

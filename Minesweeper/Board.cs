@@ -11,10 +11,10 @@ namespace Minesweeper
     {
         private enum TILES : int { WALL = -2, MINE = -1};
         private int length, width;
-        private int max_safe_spots = 10;
         private int[,] board_rep;
         private bool[,] board_found;
         private int mine_count;
+        private bool populated;
         
 
         public Board(int l, int w, int num_mines)
@@ -48,8 +48,7 @@ namespace Minesweeper
             }
 
             mine_count = num_mines;
-
-            populate_board(new Point(5, 5));
+            populated = false;
         }
 
         private Point[] get_around(Point p, bool only_plus = false)
@@ -64,7 +63,7 @@ namespace Minesweeper
                         continue;
                     if((board_rep[j, i] != -2) && !(only_plus && !(i == p.y || j == p.x)))
                     {
-                        possibilities[count++] = new Point(i, j);
+                        possibilities[count++] = new Point(j, i);
                     }
                     else
                     {
@@ -81,35 +80,31 @@ namespace Minesweeper
             Random rnd = new Random();
 
             //Select safe spots
-            int num = rnd.Next(1, max_safe_spots / 2);
-            Point[] safe_spots = new Point[num];
+            Point[] safe_spots = new Point[9];
             safe_spots[0] = start;
-            for (int i = 1; i < num; i++)
+            Point[] around = get_around(safe_spots[0]);
+            for (int i = 0; i < 8; i++)
             {
-                Point[] possible = get_around(safe_spots[i - 1], true);
-                do
-                {
-                    safe_spots[i] = possible[rnd.Next(8)];
-                } while (safe_spots[i].x == 0);
+                safe_spots[i + 1] = around[i];
             }
 
             //Place mines
             int mines_to_place = mine_count;
             do
             {
-                int pick_x = rnd.Next(1, length + 1);
-                int pick_y = rnd.Next(1, width + 1);
-                if ((board_rep[pick_x, pick_y] != (int)TILES.MINE))
+                int pick_x = rnd.Next(1, length);
+                int pick_y = rnd.Next(1, width);
+                if ((board_rep[pick_y, pick_x] != (int)TILES.MINE))
                 {
                     bool can_place = true;
-                    for(int i = 0; i < num; i++)
+                    for(int i = 0; i < 9; i++)
                     {
                         if (pick_x == safe_spots[i].x && pick_y == safe_spots[i].y)
                             can_place = false;
                     }
                     if (can_place)
                     {
-                        board_rep[pick_x, pick_y] = (int)TILES.MINE;
+                        board_rep[pick_y, pick_x] = (int)TILES.MINE;
                         mines_to_place--;
                     }
                 }
@@ -122,34 +117,57 @@ namespace Minesweeper
                 {
                     if (board_rep[j, i] < 0)
                         continue;
-                    Point[] around = get_around(new Point(j, i));
+                    Point[] around_hints = get_around(new Point(j, i));
                     for(int k = 0; k < 8; k++)
                     {
-                        if(board_rep[around[k].y,around[k].x] == (int)TILES.MINE)
+                        if(board_rep[around_hints[k].x,around_hints[k].y] == (int)TILES.MINE)
                         {
                             board_rep[j, i]++;
                         }
                     }
                 }
             }
+            populated = true;
         }
+
+        public int sweep(Point p)
+        {
+            if(!populated)
+            {
+                populate_board(p);
+                sweep(p);
+            }
+            if(!board_found[p.x,p.y])
+            {
+                board_found[p.x, p.y] = true;
+                if(board_rep[p.x, p.y] == 0)
+                {
+                    Point[] around = get_around(p);
+                    foreach (Point a in around) {
+                        sweep(a);
+                    }
+                }
+            }
+            return board_rep[p.x, p.y];
+        }
+
         public void print_board()
         {
             for (int i = 1; i < width + 1; i++)
             {
                 for (int j = 1; j < length + 1; j++)
                 {
-                    //if (board_found[j, i])
-                    // {
+                    if (board_found[j, i])
+                    {
                     if (board_rep[j, i] == (int)TILES.MINE)
                         Console.Write("M ");
                     else
                         Console.Write((board_rep[j, i]).ToString() + " ");
-                    //}
-                    //else
-                    //{
-                    //    Console.Write("-" + " ");
-                    //}
+                    }
+                    else
+                    {
+                        Console.Write("-" + " ");
+                    }
                 }
                 Console.Write("\n");
             }
